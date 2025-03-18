@@ -40,4 +40,10 @@ EOF
 kubectl debug -n <targer-namespace> <target-pod> -i --image=ghcr.io/bastiaanb/docker-tcpdump --profile=general --custom=custom-profile.yaml -- -f "tcp port 8080"
 ```
 
+## Thanks
 
+[tcpdump](https://www.tcpdump.org/) the main star of this container.
+
+[Ksniff](https://github.com/eldadru/ksniff/) wonderful kubectl plugin to make packet capture in your pods easy. Does not work with non privileged containers however, prompting this container image.
+
+[setcap-static](https://github.com/sjinks/setcap-static) minimal `setcap` implementation.
