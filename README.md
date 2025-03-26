@@ -10,18 +10,24 @@ It runs as non-root user and only needs capability `CAP_NET_RAW`, which is enabl
 
 ## Usage
 
-In Docker
+### In Docker
 
 ```
-docker run --network <TARGET-NETWORK> -i --rm --cap-drop=ALL --cap-add=NET_RAW ghcr.io/bastiaanb/docker-tcpdump
+docker run --network <TARGET-NETWORK> -ti --rm --cap-drop=ALL --cap-add=NET_RAW ghcr.io/bastiaanb/docker-tcpdump
 ```
 
-In Kubernetes, run as an ephemeral container attached to your target Pod.
+### In Kubernetes
+
+Run as an ephemeral container attached to your target Pod.
+
+#### Running as root
 ```
-kubectl debug -n <targer-namespace> <target-pod> -i --image=ghcr.io/bastiaanb/docker-tcpdump
+kubectl debug -n <targer-namespace> <target-pod> -ti --image=ghcr.io/bastiaanb/docker-tcpdump
 ```
 
-This runs the ephemeral pod as root. 
+This runs the `tcpdump` as root. 
+
+#### Running without root 
 
 If your target pod has a `SecurityContext` that does not permit this (e.g. has `runAsNonRoot: true`),
 you can define a custom profile to run the ephemeral container with minimal privileges:
@@ -37,7 +43,23 @@ securityContext:
       - ALL
 EOF
 
-kubectl debug -n <targer-namespace> <target-pod> -i --image=ghcr.io/bastiaanb/docker-tcpdump --profile=general --custom=custom-profile.yaml -- -f "tcp port 8080"
+kubectl debug -n <target-namespace> <target-pod> -i --image=ghcr.io/bastiaanb/docker-tcpdump --profile=general --custom=custom-profile.yaml -- /tcpdump -f "tcp port 8080"
+```
+
+#### Running detached
+
+Running in detached mode makes it easier to save a raw capture locally, for further inspection by tools like `wireshark`. 
+Start the container, running `pause`.
+
+```
+kubectl debug <target-pod> --image=ghcr.io/bastiaanb/docker-tcpdump -c capture --profile=general --custom=custom-profile.yaml -- /pause
+```
+
+Then exec to run tcpdump
+```
+kubectl exec -i <target-pod> -c capture -- /tcpdump -i eth0 -f "tcp port 8080" -w - > tcp-8080.cap
+<ctrl-c>
+wireshark tcp-8080.cap
 ```
 
 ## Thanks
