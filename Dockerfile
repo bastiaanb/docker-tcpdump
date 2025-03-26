@@ -13,9 +13,14 @@ RUN wget http://www.tcpdump.org/release/tcpdump-${TCPDUMP_VERSION}.tar.gz \
  && strip tcpdump \
  && mv tcpdump /
 
+FROM registry.k8s.io/pause:latest AS pause
+
+FROM wildwildangel/setcap-static:latest AS setcap
+
 FROM scratch
 
-COPY --from=wildwildangel/setcap-static /setcap-static /!setcap-static
+COPY --from=pause /pause /pause
+COPY --from=setcap /setcap-static /!setcap-static
 COPY --from=build /tcpdump /tcpdump
 
 RUN ["/!setcap-static", "cap_net_raw=+iep", "/tcpdump"]
